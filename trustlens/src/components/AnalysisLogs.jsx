@@ -7,9 +7,12 @@ const AnalysisLogs = () => {
     const { logs } = useAnalysis();
     const scrollRef = useRef(null);
 
-    // Auto-scroll to top (since we display newest first, or bottom if standard log style)
-    // Actually, design request says "cards format", implying a list.
-    // Let's show newest at the top for better visibility without scrolling.
+    // Auto-scroll to bottom on new logs
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, [logs]);
 
     return (
         <div className="h-full flex flex-col bg-slate-900/50 backdrop-blur-sm border border-white/5 rounded-xl overflow-hidden">
@@ -23,7 +26,7 @@ const AnalysisLogs = () => {
                 </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                 <AnimatePresence initial={false}>
                     {logs.map((log) => (
                         <motion.div

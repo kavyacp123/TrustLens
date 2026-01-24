@@ -28,7 +28,7 @@ export const AnalysisProvider = ({ children }) => {
         setCurrentStepId(1);
 
         // Initial log
-        setLogs(prev => [{
+        setLogs(prev => [...prev, {
             id: Date.now(),
             timestamp: new Date().toLocaleTimeString(),
             message: `Starting analysis workflow...`,
@@ -44,12 +44,12 @@ export const AnalysisProvider = ({ children }) => {
                     const stepConfig = ANALYSIS_STEPS.find(s => s.id === prevStep);
                     if (stepConfig) {
                         // Log completion of current step
-                        setLogs(prev => [{
+                        setLogs(prev => [...prev, {
                             id: Date.now(),
                             timestamp: new Date().toLocaleTimeString(),
                             message: `✓ Completed: ${stepConfig.label}`,
                             type: 'success'
-                        }, ...prev]);
+                        }]);
                     }
                 }
 
@@ -57,12 +57,12 @@ export const AnalysisProvider = ({ children }) => {
                     const nextStepConfig = ANALYSIS_STEPS.find(s => s.id === nextStep);
                     if (nextStepConfig) {
                         // Log start of next step
-                        setLogs(prev => [{
+                        setLogs(prev => [...prev, {
                             id: Date.now() + 1,
                             timestamp: new Date().toLocaleTimeString(),
                             message: `Processing: ${nextStepConfig.label}...`,
                             type: 'info'
-                        }, ...prev]);
+                        }]);
                     }
                 }
 
@@ -192,12 +192,12 @@ export const AnalysisProvider = ({ children }) => {
             setCurrentStepId(null); // Fix: Remove "Processing..." and show "COMPLETE"
 
             // Final success log
-            setLogs(prev => [{
+            setLogs(prev => [...prev, {
                 id: Date.now(),
                 timestamp: new Date().toLocaleTimeString(),
                 message: `Analysis successfully completed.`,
                 type: 'success'
-            }, ...prev]);
+            }]);
 
             // Fetch multiple datasets in parallel
             const [reportRes, agentsRes, reliabilityRes] = await Promise.all([
