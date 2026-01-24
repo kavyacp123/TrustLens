@@ -22,8 +22,8 @@ def verify_full_process():
     load_dotenv()
     
     # 2. Define target repository
-    repo_url = "https://github.com/kavyacp123/trend-pulse-spark.git"
-    analysis_id = "verification-trend-pulse"
+    repo_url = "https://github.com/kavyacp123/test-demo.git"
+    analysis_id = "test-demo-run"
     
     print("\n" + "="*80)
     print(f"STEP 1: CLONE & UPLOAD TO S3 - {repo_url}")
@@ -89,12 +89,33 @@ def verify_full_process():
         
         print(f"\nAgent Analysis Summary ({len(report.agent_outputs)} agents):")
         for output in report.agent_outputs:
-            print(f"  - {output.agent_type.value}:")
-            print(f"    Success: {output.success}")
-            print(f"    Confidence: {output.confidence:.2f}")
-            print(f"    Findings: {len(output.findings)}")
-            if output.metadata.get("snippets_analyzed"):
-                print(f"    Snippets from S3: {output.metadata.get('snippets_analyzed')}")
+            print(f"\n  EXPERTS: {output.agent_type.value.upper()}")
+            print(f"    - Success: {output.success}")
+            print(f"    - Confidence: {output.confidence:.2f}")
+            
+            # Print Snippets used (from metadata)
+            if "snippet_locations" in output.metadata and "snippets" in output.metadata:
+                print(f"    - Snippets Evaluated:")
+                for loc, content in zip(output.metadata["snippet_locations"], output.metadata["snippets"]):
+                    print(f"       • LOCATION: {loc}")
+                    print(f"         CODE:")
+                    print("-" * 30)
+                    for line in content.splitlines()[:5]: # Show first 5 lines
+                        print(f"         {line}")
+                    if len(content.splitlines()) > 5:
+                        print(f"         ...")
+                    print("-" * 30)
+            
+            # Print Findings
+            if output.findings:
+                print(f"    - Detailed Findings:")
+                for i, finding in enumerate(output.findings, 1):
+                    # Handle different finding formats for different agents
+                    desc = finding.get("description") or finding.get("reasoning") or finding.get("issue")
+                    sev = finding.get("severity") or finding.get("risk_level")
+                    print(f"       {i}. [{str(sev).upper()}] {desc}")
+            else:
+                print(f"    - Findings: No issues detected.")
         
         # Save report
         report_file = "full_verification_report.json"

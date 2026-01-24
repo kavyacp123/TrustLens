@@ -87,37 +87,46 @@ class Orchestrator:
         # Step 4: Detect conflicts
         conflicts = self.conflict_resolver.detect_conflicts(agent_outputs)
         
-        # Step 5: Failure Tracking (Part 1.4)
+        # Step 5: Failure Tracking
         failures = self.reliability_engine.get_failures(agent_outputs)
         
-        # Step 6: Aggregate confidence (Weighted Mean - Part 1.3)
+        # Step 6: Aggregate confidence (Weighted Mean)
         overall_confidence = self.reliability_engine.aggregate_confidence(agent_outputs)
         
-        # Step 7: Check deferral (Safety Gate - Part 1.5)
-        should_defer, defer_reason = self.reliability_engine.should_defer(overall_confidence, conflicts, failures)
+        # Step 7: Get pre-deferral risk assessment
+        # DecisionAgent correctly identifies max_risk even if system might later defer
+        discovery_output = self.decision_agent.recommend_action(agent_outputs, overall_confidence, [])
+        max_risk = discovery_output.risk_level
         
-        # Step 8: Get decision recommendation (Part 2)
+        # Step 8: Check deferral (Safety Gate - Enforced Rules)
+        should_defer, defer_reason = self.reliability_engine.should_defer(
+            overall_confidence, conflicts, failures, max_risk
+        )
+        
+        # Step 9: Final Decision
+        # DecisionAgent now calculates final decision confidence with conflict penalties
         decision_output = self.decision_agent.recommend_action(agent_outputs, overall_confidence, conflicts)
         all_outputs.append(decision_output)
         
-        # Step 9: Generate report (Part 3)
-        risk_levels = [o.risk_level for o in agent_outputs if o.success]
-        overall_risk = max(risk_levels) if risk_levels else RiskLevel.NONE
+        # Step 10: Explainability (Confidence Reasoning)
+        from .confidence_reasoner import ConfidenceReasoner
+        reasoning = ConfidenceReasoner.generate_explanation(
+            len(failures.get("failed_agents", [])),
+            len(conflicts),
+            overall_confidence,
+            decision_output.confidence
+        )
         
-        # Decision recommendation might be overridden by deferral logic
-        final_recommendation = decision_output.metadata.get("recommendation", "unknown")
-        final_action = decision_output.metadata.get("recommendation")
+        # Final Recommendation Override
+        final_recommendation = "Analysis Deferred" if should_defer else decision_output.metadata.get("recommendation", "unknown")
+        final_action = "defer" if should_defer else decision_output.metadata.get("recommendation")
         
-        if should_defer:
-            final_recommendation = "Analysis Deferred"
-            final_action = "defer"
-
         report = FinalReport(
             repository_url=repo_url,
             s3_snapshot_path=s3_path,
             timestamp=datetime.now(),
             overall_confidence=overall_confidence,
-            overall_risk_level=overall_risk,
+            overall_risk_level=max_risk,
             agent_outputs=all_outputs,
             conflicts=conflicts,
             recommendation=final_recommendation,
@@ -126,10 +135,11 @@ class Orchestrator:
             deferral_reason=defer_reason if should_defer else None,
             metadata={
                 "analysis_confidence": overall_confidence,
-                "decision_confidence": decision_output.metadata.get("decision_confidence", 0.0),
+                "decision_confidence": decision_output.confidence,
+                "confidence_reasoning": reasoning,
                 "failed_agents": failures.get("failed_agents", []),
-                "conflicts_count": len(conflicts),
-                "confidence_reasoning": decision_output.metadata.get("confidence_reasoning", ""),
+                "conflicts_summary": len(conflicts),
+                "agent_traces": decision_output.metadata.get("agent_traces", []),
                 "system_health": self.reliability_engine.calculate_system_health(all_outputs)
             }
         )

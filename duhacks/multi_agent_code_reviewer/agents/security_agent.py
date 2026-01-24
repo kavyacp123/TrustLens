@@ -80,6 +80,8 @@ class SecurityAnalysisAgent(BaseAgent):
                 risk_level=risk_level,
                 metadata={
                     "snippets_analyzed": len(snippets),
+                    "snippet_locations": [s.get_location() for s in snippets],
+                    "snippets": [s.content for s in snippets],
                     "features_used": list(features.keys())
                 }
             )

@@ -5,7 +5,7 @@ Ensures the system never makes an unsafe or blind decision.
 """
 
 from typing import List, Dict, Any, Tuple, Optional
-from schemas.agent_output import AgentOutput, AgentType
+from schemas.agent_output import AgentOutput, AgentType, RiskLevel
 import statistics
 
 
@@ -16,26 +16,18 @@ class ReliabilityEngine:
     """
     
     def __init__(self):
-        # Static reliability scores per PRD
+        # Static reliability scores per PRD Section 1.2
         self.agent_reliability: Dict[str, float] = {
             AgentType.SECURITY_ANALYSIS.value: 1.0,
             AgentType.LOGIC_ANALYSIS.value: 1.0,
             AgentType.CODE_QUALITY.value: 1.0,
             AgentType.FEATURE_EXTRACTION.value: 1.0
         }
-        # Agents considered critical for any code review
-        self.critical_agents = {AgentType.SECURITY_ANALYSIS}
     
     def aggregate_confidence(self, outputs: List[AgentOutput]) -> float:
         """
-        Aggregate confidence using Reliability-Weighted Mean.
+        Aggregate confidence using Reliability-Weighted Mean (PRD Section 1.1).
         ONLY includes successful agents.
-        
-        Args:
-            outputs: List of agent outputs
-        
-        Returns:
-            Aggregated confidence score (0.0-1.0)
         """
         successful_outputs = [o for o in outputs if o.success]
         
@@ -57,33 +49,33 @@ class ReliabilityEngine:
             
         return sum_weighted_confidence / sum_reliability
     
-    def get_failures(self, outputs: List[AgentOutput]) -> Dict[str, List[str]]:
+    def get_failures(self, outputs: List[AgentOutput]) -> Dict[str, Any]:
         """
-        Track failed and missing critical agents.
+        Track failed agents (PRD Section 1.4).
         """
         failed_agents = [o.agent_type.value for o in outputs if not o.success]
         
-        # Identify critical agents that didn't run or didn't succeed
-        successful_types = {o.agent_type for o in outputs if o.success}
-        missing_critical = [
-            agent.value for agent in self.critical_agents 
-            if agent not in successful_types
-        ]
+        # Security agent failure is a specific defer condition
+        security_failed = any(
+            o.agent_type == AgentType.SECURITY_ANALYSIS and not o.success 
+            for o in outputs
+        )
         
         return {
             "failed_agents": failed_agents,
-            "missing_critical_agents": missing_critical
+            "security_failed": security_failed
         }
 
     def should_defer(
         self,
         overall_confidence: float,
         conflicts: List[Any],
-        failures: Dict[str, List[str]],
+        failures: Dict[str, Any],
+        max_risk: RiskLevel,
         min_confidence_threshold: float = 0.7
     ) -> Tuple[bool, str]:
         """
-        Safety Gate: Decide if system must defer to human.
+        Safety Gate: Decide if system must defer to human (PRD Section 1.2).
         Enforces ordered safety rules.
         """
         # 1. If no successful agents -> DEFER
@@ -98,10 +90,13 @@ class ReliabilityEngine:
         if conflicts:
             return True, f"{len(conflicts)} unresolved conflicts between agents"
         
-        # 4. If critical agent failed (e.g., Security) -> DEFER
-        if failures.get("missing_critical_agents"):
-            agents = ", ".join(failures["missing_critical_agents"])
-            return True, f"Missing critical agent analysis: {agents}"
+        # 4. If critical agent (Security) failed -> DEFER
+        if failures.get("security_failed"):
+            return True, "Security analysis agent failed to complete"
+            
+        # 5. If CRITICAL risk detected AND confidence < 0.80 -> DEFER
+        if max_risk == RiskLevel.CRITICAL and overall_confidence < 0.80:
+            return True, "Critical risk detected but overall confidence is below safety threshold (0.80)"
         
         return False, ""
 

@@ -82,7 +82,24 @@ class GeminiClient:
             Mock response
         """
         # Detect prompt type and return appropriate mock
-        if "SECURITY" in prompt.upper():
+        # Note: Check LOGIC first because logic prompts often contain 'Do NOT check security'
+        if "LOGIC" in prompt.upper():
+            return {
+                "findings": [
+                    {
+                        "issue": "infinite_loop",
+                        "severity": "high",
+                        "description": "Unconditional while True loop may cause infinite execution"
+                    },
+                    {
+                        "issue": "unreachable_code",
+                        "severity": "medium",
+                        "description": "Code after break statement may be unreachable"
+                    }
+                ],
+                "confidence": 0.75
+            }
+        elif "SECURITY" in prompt.upper():
             return {
                 "findings": [
                     {
@@ -99,22 +116,6 @@ class GeminiClient:
                     }
                 ],
                 "confidence": 0.85
-            }
-        elif "LOGIC" in prompt.upper():
-            return {
-                "findings": [
-                    {
-                        "issue": "infinite_loop",
-                        "severity": "high",
-                        "description": "Unconditional while True loop may cause infinite execution"
-                    },
-                    {
-                        "issue": "unreachable_code",
-                        "severity": "medium",
-                        "description": "Code after break statement may be unreachable"
-                    }
-                ],
-                "confidence": 0.75
             }
         else:
             return {

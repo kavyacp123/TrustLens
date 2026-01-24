@@ -66,9 +66,9 @@ class ConflictResolver:
             RiskLevel.CRITICAL: 4
         }
         
-        # Get risk assessments from security and logic agents
-        security_outputs = [o for o in outputs if o.agent_type.value == "security_analysis"]
-        logic_outputs = [o for o in outputs if o.agent_type.value == "logic_analysis"]
+        # Get risk assessments from successful security and logic agents
+        security_outputs = [o for o in outputs if o.success and o.agent_type.value == "security_analysis"]
+        logic_outputs = [o for o in outputs if o.success and o.agent_type.value == "logic_analysis"]
         
         if security_outputs and logic_outputs:
             for sec_out in security_outputs:

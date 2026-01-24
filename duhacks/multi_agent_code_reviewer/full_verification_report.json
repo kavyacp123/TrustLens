@@ -1,8 +1,8 @@
 {
-  "repository_url": "https://github.com/kavyacp123/trend-pulse-spark.git",
-  "s3_snapshot_path": "s3://duhacks-s3-aicode/trend-pulse-spark/",
-  "timestamp": "2026-01-24T23:50:07.548188",
-  "overall_confidence": 0.8666666666666667,
+  "repository_url": "https://github.com/kavyacp123/test-demo.git",
+  "s3_snapshot_path": "s3://duhacks-s3-aicode/test-demo/",
+  "timestamp": "2026-01-25T00:40:50.383712",
+  "overall_confidence": 0.8333333333333334,
   "overall_risk_level": "critical",
   "agent_outputs": [
     {
@@ -12,55 +12,29 @@
       "risk_level": "none",
       "metadata": {
         "features": {
-          "total_loc": 23230,
+          "total_loc": 219,
           "languages": [
-            "ico",
-            "txt",
-            "sql",
-            "tsx",
-            "unknown",
-            "conf",
-            "html",
-            "css",
-            "md",
-            "xml",
-            "json",
             "java",
             "js",
-            "svg",
             "ts",
-            "png",
-            "lockb",
-            "yml"
+            "py",
+            "json"
           ],
           "file_extensions": {
-            "json": 119,
-            "md": 9,
-            "xml": 1,
-            "java": 86,
-            "yml": 4,
-            "sql": 4,
-            "lockb": 1,
-            "js": 2,
-            "html": 1,
-            "ico": 1,
-            "svg": 1,
-            "txt": 1,
-            "css": 2,
-            "tsx": 60,
-            "ts": 7,
-            "unknown": 1,
-            "conf": 1,
-            "png": 1
+            "json": 10,
+            "java": 1,
+            "js": 1,
+            "py": 1,
+            "ts": 1
           },
-          "average_file_size": 3619.9834437086092,
+          "average_file_size": 497.2142857142857,
           "complexity_indicators": {
-            "nested_depth": 11,
-            "function_count": 37,
-            "class_count": 77
+            "nested_depth": 6,
+            "function_count": 17,
+            "class_count": 1
           }
         },
-        "file_count": 302
+        "file_count": 14
       },
       "success": true,
       "error_message": null
@@ -92,47 +66,19 @@
           "severity": "high",
           "description": "Missing input validation on user_id parameter",
           "line": "return database.query(user_id)"
-        },
-        {
-          "type": "sql_injection",
-          "severity": "critical",
-          "description": "Potential SQL injection in user authentication",
-          "line": "query = f\"SELECT * FROM users WHERE username='{username}'...\""
-        },
-        {
-          "type": "input_validation",
-          "severity": "high",
-          "description": "Missing input validation on user_id parameter",
-          "line": "return database.query(user_id)"
-        },
-        {
-          "type": "sql_injection",
-          "severity": "critical",
-          "description": "Potential SQL injection in user authentication",
-          "line": "query = f\"SELECT * FROM users WHERE username='{username}'...\""
-        },
-        {
-          "type": "input_validation",
-          "severity": "high",
-          "description": "Missing input validation on user_id parameter",
-          "line": "return database.query(user_id)"
-        },
-        {
-          "type": "sql_injection",
-          "severity": "critical",
-          "description": "Potential SQL injection in user authentication",
-          "line": "query = f\"SELECT * FROM users WHERE username='{username}'...\""
-        },
-        {
-          "type": "input_validation",
-          "severity": "high",
-          "description": "Missing input validation on user_id parameter",
-          "line": "return database.query(user_id)"
         }
       ],
       "risk_level": "critical",
       "metadata": {
-        "snippets_analyzed": 5,
+        "snippets_analyzed": 2,
+        "snippet_locations": [
+          "test.java:9-25",
+          "test.js:3-11"
+        ],
+        "snippets": [
+          "    public static void getUser(String id) throws Exception {\n        Connection conn = DriverManager.getConnection(\n            \"jdbc:mysql://localhost:3306/users\", DB_USER, DB_PASS\n        );\n\n        Statement stmt = conn.createStatement();\n\n        // \u274c SECURITY: SQL Injection\n        String query = \"SELECT * FROM users WHERE id = '\" + id + \"'\";\n        ResultSet rs = stmt.executeQuery(query);\n\n        while (rs.next()) {\n            System.out.println(rs.getString(\"name\"));\n        }\n\n      ",
+          "function runCommand(userInput) {\n    // \u274c SECURITY: Command Injection\n    exec(\"ls \" + userInput, (err, stdout) => {\n        if (err) {\n            console.error(err);\n        }\n        console.log(stdout);\n    });\n}"
+        ],
         "features_used": [
           "signals",
           "risk_indicators",
@@ -144,72 +90,52 @@
     },
     {
       "agent_type": "logic_analysis",
-      "confidence": 0.85,
+      "confidence": 0.75,
       "findings": [
         {
-          "type": "sql_injection",
-          "severity": "critical",
-          "description": "Potential SQL injection in user authentication",
-          "line": "query = f\"SELECT * FROM users WHERE username='{username}'...\""
-        },
-        {
-          "type": "input_validation",
+          "issue": "infinite_loop",
           "severity": "high",
-          "description": "Missing input validation on user_id parameter",
-          "line": "return database.query(user_id)"
+          "description": "Unconditional while True loop may cause infinite execution"
         },
         {
-          "type": "sql_injection",
-          "severity": "critical",
-          "description": "Potential SQL injection in user authentication",
-          "line": "query = f\"SELECT * FROM users WHERE username='{username}'...\""
+          "issue": "unreachable_code",
+          "severity": "medium",
+          "description": "Code after break statement may be unreachable"
         },
         {
-          "type": "input_validation",
+          "issue": "infinite_loop",
           "severity": "high",
-          "description": "Missing input validation on user_id parameter",
-          "line": "return database.query(user_id)"
+          "description": "Unconditional while True loop may cause infinite execution"
         },
         {
-          "type": "sql_injection",
-          "severity": "critical",
-          "description": "Potential SQL injection in user authentication",
-          "line": "query = f\"SELECT * FROM users WHERE username='{username}'...\""
+          "issue": "unreachable_code",
+          "severity": "medium",
+          "description": "Code after break statement may be unreachable"
         },
         {
-          "type": "input_validation",
+          "issue": "infinite_loop",
           "severity": "high",
-          "description": "Missing input validation on user_id parameter",
-          "line": "return database.query(user_id)"
+          "description": "Unconditional while True loop may cause infinite execution"
         },
         {
-          "type": "sql_injection",
-          "severity": "critical",
-          "description": "Potential SQL injection in user authentication",
-          "line": "query = f\"SELECT * FROM users WHERE username='{username}'...\""
-        },
-        {
-          "type": "input_validation",
-          "severity": "high",
-          "description": "Missing input validation on user_id parameter",
-          "line": "return database.query(user_id)"
-        },
-        {
-          "type": "sql_injection",
-          "severity": "critical",
-          "description": "Potential SQL injection in user authentication",
-          "line": "query = f\"SELECT * FROM users WHERE username='{username}'...\""
-        },
-        {
-          "type": "input_validation",
-          "severity": "high",
-          "description": "Missing input validation on user_id parameter",
-          "line": "return database.query(user_id)"
+          "issue": "unreachable_code",
+          "severity": "medium",
+          "description": "Code after break statement may be unreachable"
         }
       ],
-      "risk_level": "low",
+      "risk_level": "high",
       "metadata": {
-        "snippets_analyzed": 5,
+        "snippets_analyzed": 3,
+        "snippet_locations": [
+          "test.py:33-40",
+          "test.py:22-29",
+          "test.py:25-29"
+        ],
+        "snippets": [
+          "def deeply_nested(x):\n    # \u274c QUALITY: Excessive nesting\n    if x > 0:\n        if x > 1:\n            if x > 2:\n                if x > 3:\n                    if x > 4:\n                        print(\"Too deep\")",
+          "def process_users(users):\n    i = 0\n    # \u274c LOGIC: Infinite loop (i never increments)\n    while i < len(users):\n        if users[i][\"active\"]:\n            if users[i][\"role\"] == \"admin\":\n                if users[i][\"permissions\"]:\n                    print(\"Admin user\")",
+          "    while i < len(users):\n        if users[i][\"active\"]:\n            if users[i][\"role\"] == \"admin\":\n                if users[i][\"permissions\"]:\n                    print(\"Admin user\")"
+        ],
         "features_used": [
           "structure",
           "complexity_metrics",
@@ -222,32 +148,16 @@
     {
       "agent_type": "code_quality",
       "confidence": 0.9,
-      "findings": [
-        {
-          "type": "long_functions",
-          "severity": "info",
-          "description": "Average function length 627.8 exceeds threshold"
-        },
-        {
-          "type": "high_complexity",
-          "severity": "warning",
-          "description": "Max nesting depth 11 is high"
-        },
-        {
-          "type": "large_codebase",
-          "severity": "info",
-          "description": "Codebase has 23230 lines of code"
-        }
-      ],
+      "findings": [],
       "risk_level": "low",
       "metadata": {
         "quality_metrics": {
-          "avg_function_length": 627.8378378378378,
-          "max_nesting_depth": 11,
-          "total_loc": 23230,
-          "avg_file_size": 3619.9834437086092,
-          "function_count": 37,
-          "class_count": 77
+          "avg_function_length": 12.882352941176471,
+          "max_nesting_depth": 6,
+          "total_loc": 219,
+          "avg_file_size": 497.2142857142857,
+          "function_count": 17,
+          "class_count": 1
         },
         "advisory": true,
         "blocking": false
@@ -257,62 +167,105 @@
     },
     {
       "agent_type": "decision",
-      "confidence": 0.7166666666666667,
+      "confidence": 0.8333333333333334,
       "findings": [
         {
           "recommendation": "manual_review_required",
-          "reasoning": "Highest detected risk: critical",
           "max_risk": "critical"
         }
       ],
       "risk_level": "critical",
       "metadata": {
-        "analysis_confidence": 0.8666666666666667,
-        "decision_confidence": 0.7166666666666667,
         "recommendation": "manual_review_required",
-        "confidence_reasoning": "1 conflict(s) reduced certainty.",
-        "conflicts_count": 1
+        "max_risk": "critical",
+        "decision_confidence": 0.8333333333333334,
+        "agent_traces": [
+          {
+            "agent": "security_analysis",
+            "success": true,
+            "confidence": 0.85,
+            "risk": "critical",
+            "snippets_used": [
+              "test.java:9-25",
+              "test.js:3-11"
+            ],
+            "findings_count": 4
+          },
+          {
+            "agent": "logic_analysis",
+            "success": true,
+            "confidence": 0.75,
+            "risk": "high",
+            "snippets_used": [
+              "test.py:33-40",
+              "test.py:22-29",
+              "test.py:25-29"
+            ],
+            "findings_count": 6
+          },
+          {
+            "agent": "code_quality",
+            "success": true,
+            "confidence": 0.9,
+            "risk": "low",
+            "snippets_used": [],
+            "findings_count": 0
+          }
+        ]
       },
       "success": true,
       "error_message": null
     }
   ],
-  "conflicts": [
-    {
-      "agents_involved": [
-        "security_analysis",
-        "logic_analysis"
-      ],
-      "disagreement_level": 0.75,
-      "conflicting_findings": [
-        {
-          "agent": "security_analysis",
-          "risk_level": "critical",
-          "confidence": 0.85
-        },
-        {
-          "agent": "logic_analysis",
-          "risk_level": "low",
-          "confidence": 0.85
-        }
-      ]
-    }
-  ],
-  "recommendation": "Analysis Deferred",
-  "action_recommended": "defer",
-  "deferred": true,
-  "deferral_reason": "1 unresolved conflicts between agents",
+  "conflicts": [],
+  "recommendation": "manual_review_required",
+  "action_recommended": "manual_review_required",
+  "deferred": false,
+  "deferral_reason": null,
   "metadata": {
-    "analysis_confidence": 0.8666666666666667,
-    "decision_confidence": 0.7166666666666667,
+    "analysis_confidence": 0.8333333333333334,
+    "decision_confidence": 0.8333333333333334,
+    "confidence_reasoning": "Analysis complete with nominal confidence.",
     "failed_agents": [],
-    "conflicts_count": 1,
-    "confidence_reasoning": "1 conflict(s) reduced certainty.",
+    "conflicts_summary": 0,
+    "agent_traces": [
+      {
+        "agent": "security_analysis",
+        "success": true,
+        "confidence": 0.85,
+        "risk": "critical",
+        "snippets_used": [
+          "test.java:9-25",
+          "test.js:3-11"
+        ],
+        "findings_count": 4
+      },
+      {
+        "agent": "logic_analysis",
+        "success": true,
+        "confidence": 0.75,
+        "risk": "high",
+        "snippets_used": [
+          "test.py:33-40",
+          "test.py:22-29",
+          "test.py:25-29"
+        ],
+        "findings_count": 6
+      },
+      {
+        "agent": "code_quality",
+        "success": true,
+        "confidence": 0.9,
+        "risk": "low",
+        "snippets_used": [],
+        "findings_count": 0
+      }
+    ],
     "system_health": {
       "total_agents": 5,
       "successful_agents": 5,
       "failed_agents": 0,
-      "average_confidence": 0.8633333333333333,
+      "average_confidence": 0.8666666666666666,
       "health_status": "healthy"
     }
   }

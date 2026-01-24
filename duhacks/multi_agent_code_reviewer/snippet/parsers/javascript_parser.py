@@ -191,6 +191,7 @@ class JavascriptParser(TreeSitterBaseParser):
         uses_eval = False
         uses_dynamic_function = False
         uses_sql = False
+        uses_exec = False
         
         sql_keywords = ["SELECT ", "INSERT ", "UPDATE ", "DELETE "]
         
@@ -198,15 +199,27 @@ class JavascriptParser(TreeSitterBaseParser):
         while stack:
             curr = stack.pop()
             
-            # 1. Check calls: eval()
+            # 1. Check calls: eval(), exec(), child_process.exec()
             if curr.type == 'call_expression':
+                # For basic calls like eval()
                 func = curr.child_by_field_name('function')
                 if func:
                     func_name = self.get_node_text(func, code)
                     if func_name == 'eval':
                         uses_eval = True
+                    elif func_name == 'exec':
+                        uses_exec = True
                     elif func_name == 'Function':
                         uses_dynamic_function = True
+                
+                # For member calls like child_process.exec()
+                # Tree-sitter: (call_expression function: (member_expression object: (identifier) property: (property_identifier)))
+                if not func and curr.children:
+                    for child in curr.children:
+                        if child.type == 'member_expression':
+                            prop_node = child.child_by_field_name('property')
+                            if prop_node and self.get_node_text(prop_node, code) == 'exec':
+                                uses_exec = True
             
             # 2. Check strict new Function()
             if curr.type == 'new_expression':
@@ -230,7 +243,8 @@ class JavascriptParser(TreeSitterBaseParser):
         return {
             "uses_eval": uses_eval,
             "uses_dynamic_function": uses_dynamic_function,
-            "uses_sql_strings": uses_sql
+            "uses_sql_strings": uses_sql,
+            "uses_exec": uses_exec
         }
 
     def _is_recursive(self, node: Node, func_name: str, code: str) -> bool:
