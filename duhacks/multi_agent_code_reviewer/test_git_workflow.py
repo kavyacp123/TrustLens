@@ -12,14 +12,18 @@ from dotenv import load_dotenv
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-# Load .env file
-env_file = project_root / ".env"
-if env_file.exists():
-    load_dotenv(env_file)
-else:
-    parent_env = project_root.parent / ".env"
-    if parent_env.exists():
-        load_dotenv(parent_env)
+# Load .env file - search up the directory tree
+def load_env_file():
+    """Find and load .env file from current or parent directories"""
+    current = Path(__file__).parent
+    for _ in range(5):
+        env_file = current / ".env"
+        if env_file.exists():
+            load_dotenv(env_file)
+            return
+        current = current.parent
+
+load_env_file()
 
 from storage.git_s3_workflow import git_s3_workflow
 from storage.git_handler import GitHandler
@@ -284,9 +288,9 @@ def main():
     logger = Logger("TestMain")
     
     print("\n")
-    print("╔" + "="*58 + "╗")
-    print("║" + " "*10 + "GIT-S3 WORKFLOW TEST SUITE" + " "*22 + "║")
-    print("╚" + "="*58 + "╝")
+    print("=" * 60)
+    print(" " * 10 + "GIT-S3 WORKFLOW TEST SUITE")
+    print("=" * 60)
     
     try:
         test_git_handler()
