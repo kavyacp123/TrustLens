@@ -1,7 +1,7 @@
 {
   "repository_url": "https://github.com/kavyacp123/test-demo.git",
   "s3_snapshot_path": "s3://duhacks-s3-aicode/test-demo/",
-  "timestamp": "2026-01-25T00:40:50.383712",
+  "timestamp": "2026-01-25T00:51:24.524883",
   "overall_confidence": 0.8333333333333334,
   "overall_risk_level": "critical",
   "agent_outputs": [
@@ -14,11 +14,11 @@
         "features": {
           "total_loc": 219,
           "languages": [
+            "py",
             "java",
             "js",
-            "ts",
-            "py",
-            "json"
+            "json",
+            "ts"
           ],
           "file_extensions": {
             "json": 10,

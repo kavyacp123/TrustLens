@@ -20,12 +20,23 @@ class TreeSitterBaseParser:
         self.parser = Parser()
         
         try:
+            lang = None
             if language_name == 'javascript':
                 lang = Language(tree_sitter_javascript.language())
             elif language_name == 'typescript':
-                lang = Language(tree_sitter_typescript.language_typescript())
+                # Resilient loading for different versions of tree-sitter-typescript
+                for attr in ['language', 'language_typescript', 'typescript']:
+                    if hasattr(tree_sitter_typescript, attr):
+                        lang = Language(getattr(tree_sitter_typescript, attr)())
+                        break
+                if not lang:
+                    raise AttributeError("Could not find language function in tree_sitter_typescript")
             elif language_name == 'java':
                 lang = Language(tree_sitter_java.language())
+            
+            if not lang:
+                raise ValueError(f"Language {language_name} not properly loaded")
+                
             try:
                 # Try new API (0.22+)
                 self.parser = Parser(lang)

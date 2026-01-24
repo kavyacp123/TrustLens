@@ -52,11 +52,12 @@ class SnippetExtractor:
             for file in files:
                 if file.endswith(('.py', '.js', '.ts', '.java')):
                     path = os.path.join(root, file)
+                    rel_path = os.path.relpath(path, local_dir)
                     try:
                         with open(path, 'r', encoding='utf-8') as f:
-                            code_files[file] = f.read()
+                            code_files[rel_path] = f.read()
                     except Exception as e:
-                        self.logger.warning(f"Could not read {file}: {e}")
+                        self.logger.warning(f"Could not read {rel_path}: {e}")
                         
         # Mock features since new architecture doesn't use them (yet)
         return self.extract_all(code_files, features={})
