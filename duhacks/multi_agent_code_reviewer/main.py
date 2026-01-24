@@ -58,8 +58,10 @@ def main():
     
     # Example analysis
     # In production: get repo_url and s3_path from command line or API
+    import os
+    bucket = os.getenv("S3_BUCKET_NAME", "duhacks-s3-aicode")
     repo_url = "https://github.com/example/repo"
-    s3_path = "s3://code-review-bucket/repo-snapshot-2024/"
+    s3_path = f"s3://{bucket}/repo-snapshot-2024/"
     
     logger.info(f"Analyzing repository: {repo_url}")
     logger.info(f"S3 snapshot: {s3_path}")

@@ -16,6 +16,54 @@ class RiskLevel(Enum):
     LOW = "low"
     NONE = "none"
 
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            severity = {
+                "critical": 4,
+                "high": 3,
+                "medium": 2,
+                "low": 1,
+                "none": 0
+            }
+            return severity[self.value] < severity[other.value]
+        return NotImplemented
+        
+    def __le__(self, other):
+        if self.__class__ is other.__class__:
+            severity = {
+                "critical": 4,
+                "high": 3,
+                "medium": 2,
+                "low": 1,
+                "none": 0
+            }
+            return severity[self.value] <= severity[other.value]
+        return NotImplemented
+
+    def __gt__(self, other):
+        if self.__class__ is other.__class__:
+            severity = {
+                "critical": 4,
+                "high": 3,
+                "medium": 2,
+                "low": 1,
+                "none": 0
+            }
+            return severity[self.value] > severity[other.value]
+        return NotImplemented
+        
+    def __ge__(self, other):
+        if self.__class__ is other.__class__:
+            severity = {
+                "critical": 4,
+                "high": 3,
+                "medium": 2,
+                "low": 1,
+                "none": 0
+            }
+            return severity[self.value] >= severity[other.value]
+        return NotImplemented
+
 
 class AgentType(Enum):
     """Types of agents in the system"""

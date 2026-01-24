@@ -49,7 +49,7 @@ def test_git_handler():
     
     for url in valid_urls:
         is_valid = handler.validate_repo_url(url)
-        print(f"  {url}: {'✅ VALID' if is_valid else '❌ INVALID'}")
+        print(f"  {url}: {'[OK] VALID' if is_valid else '[FAIL] INVALID'}")
     
     # Test 1b: Repo Name Extraction
     print("\n[1b] Repository Name Extraction")
@@ -301,13 +301,13 @@ def main():
         test_configuration()
         
         print("\n" + "="*60)
-        print("✅ TEST SUITE COMPLETED SUCCESSFULLY")
+        print("[OK] TEST SUITE COMPLETED SUCCESSFULLY")
         print("="*60)
         
-        print("\n📚 Documentation:")
+        print("\nDocumentation:")
         print("  - GIT_WORKFLOW_GUIDE.md - Complete guide")
         print("  - API_DOCUMENTATION.md - API reference")
-        print("\n🚀 Next Steps:")
+        print("\nNext Steps:")
         print("  1. Configure AWS credentials in .env")
         print("  2. Install dependencies: pip install -r requirements.txt")
         print("  3. Start API: python run_api.py")
@@ -316,7 +316,7 @@ def main():
     
     except Exception as e:
         logger.error(f"Test failed: {e}")
-        print(f"\n❌ ERROR: {e}\n")
+        print(f"\n[ERROR] {e}\n")
 
 
 if __name__ == "__main__":

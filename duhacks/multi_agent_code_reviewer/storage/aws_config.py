@@ -46,7 +46,7 @@ class AWSConfig:
         self.aws_region = os.environ.get('AWS_REGION', 'us-east-1')
         
         # S3 Configuration
-        self.s3_bucket_name = os.environ.get('S3_BUCKET_NAME', 'code-review-bucket')
+        self.s3_bucket_name = os.environ.get('S3_BUCKET_NAME', 'duhacks-s3-aicode')
         self.s3_prefix = os.environ.get('S3_PREFIX', 'code-snapshots/')
         
         # Bucket creation - set to False if you have existing bucket
