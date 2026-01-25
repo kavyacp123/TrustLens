@@ -1,9 +1,13 @@
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const CLEAN_BASE_URL = BASE_URL.replace(/\/$/, "");
+const API_URL = CLEAN_BASE_URL.endsWith("/api") ? CLEAN_BASE_URL : `${CLEAN_BASE_URL}/api`;
+
 export const APP_CONFIG = {
     name: "TrustLens",
     subtitle: "Multi-Agent AI Code Review Orchestrator",
     version: "v1.0.0-beta",
-    API_BASE_URL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+    API_BASE_URL: API_URL,
 };
 
 export const ANALYSIS_STEPS = [
