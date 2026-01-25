@@ -21,7 +21,7 @@ graph TD
 
     subgraph "Orchestration Layer (The Brain)"
         S3 --> |Read Snapshot| ORC[System Orchestrator]
-        ORC --> |Step 1: Scan| FEA[Feature Agent]
+        ORC --> |Step 1: Scan| FEA[Feature extraction]
         FEA --> |Project DNA| RP[Routing Policy]
         ORC --> |Step 2: Curate| RP
     end
