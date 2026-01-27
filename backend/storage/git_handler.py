@@ -156,11 +156,22 @@ class GitHandler:
             }
         
         repo_name = self.extract_repo_name(repo_url)
-        clone_dir = os.path.join(self.base_temp_dir, f"repo-{repo_name}-{datetime.now().strftime('%Y%m%d%H%M%S')}")
+        # Sanitize name and path
+        safe_repo_name = "".join([c for c in repo_name if c.isalnum() or c in ('-', '_')])
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        clone_dir = os.path.join(self.base_temp_dir, f"repo-{safe_repo_name}-{timestamp}")
         
         try:
+            # Handle Authentication (Use GITHUB_TOKEN if available)
+            token = os.environ.get('GITHUB_TOKEN')
+            if token and 'github.com' in repo_url:
+                # Inject token: https://<token>@github.com/user/repo.git
+                auth_url = repo_url.replace('https://', f'https://{token}@')
+                self.logger.info(f"🔑 Using GITHUB_TOKEN for authentication")
+            else:
+                auth_url = repo_url
+
             self.logger.info(f"🔄 Starting clone: {repo_url}")
-            self.logger.info(f"📁 Clone destination: {clone_dir}")
             
             # Prepare clone options
             clone_kwargs = {
@@ -173,7 +184,7 @@ class GitHandler:
                 clone_kwargs['depth'] = depth
             
             # Clone repository
-            repo = Repo.clone_from(repo_url, **clone_kwargs)
+            repo = Repo.clone_from(auth_url, **clone_kwargs)
             
             # Verify clone
             if not os.path.exists(clone_dir):
@@ -183,17 +194,6 @@ class GitHandler:
             repo_info = self._get_repo_info(repo, clone_dir)
             
             self.logger.info(f"✅ Successfully cloned: {repo_name}")
-            self.logger.info(f"📊 Commits: {repo_info['commit_count']}, Files: {repo_info['file_count']}")
-            
-            # Track clone
-            self.cloned_repos[repo_name] = {
-                "url": repo_url,
-                "local_path": clone_dir,
-                "branch": branch,
-                "cloned_at": datetime.now().isoformat(),
-                "repo_info": repo_info
-            }
-            
             return {
                 "success": True,
                 "repo_name": repo_name,
@@ -206,29 +206,31 @@ class GitHandler:
         
         except git.exc.GitCommandError as e:
             error_msg = str(e)
-            self.logger.error(f"❌ Git command error: {error_msg}")
+            self.logger.error(f"❌ Git clone failed: {error_msg}")
+            
+            # Mask token in error message if present
+            if token:
+                error_msg = error_msg.replace(token, "********")
+                
             self._cleanup_dir(clone_dir)
             
-            # Provide detailed error diagnosis
-            if "exit code(128)" in error_msg or "not found" in error_msg.lower():
-                diagnosis = "Git is not installed or not in PATH. Run: apt-get install -y git (Linux) or install Git (Windows)"
-                self.logger.error(f"💡 DIAGNOSIS: {diagnosis}")
-                error_msg = f"Git not installed. Install Git then retry. Details: {error_msg}"
-            elif "could not resolve host" in error_msg.lower() or "connection" in error_msg.lower():
-                diagnosis = "Network connectivity issue - cannot reach repository server"
-                self.logger.error(f"💡 DIAGNOSIS: {diagnosis}")
-                error_msg = f"Network error. Check internet connection. Details: {error_msg}"
-            elif "authentication" in error_msg.lower() or "401" in error_msg or "403" in error_msg:
-                diagnosis = "Authentication failed - check credentials or SSH key setup"
-                self.logger.error(f"💡 DIAGNOSIS: {diagnosis}")
-                error_msg = f"Authentication failed. Check credentials. Details: {error_msg}"
+            # Accurate Diagnosis
+            if "authentication" in error_msg.lower() or "401" in error_msg or "403" in error_msg:
+                diagnosis = "Authentication failed - Check if GITHUB_TOKEN is valid and has repo permissions"
+            elif "not found" in error_msg.lower() or "404" in error_msg:
+                diagnosis = "Repository not found - Verify the URL is correct"
+            elif "exit code(128)" in error_msg and GIT_AVAILABLE:
+                diagnosis = f"Git operation failed (Code 128). This is often a permission or network issue. Error: {error_msg.splitlines()[-1]}"
+            else:
+                diagnosis = "Git is not installed or not in PATH."
+                
+            self.logger.error(f"💡 DIAGNOSIS: {diagnosis}")
             
             return {
                 "success": False,
-                "error": error_msg,
+                "error": diagnosis,
                 "repo_url": repo_url,
-                "details": str(e),
-                "exit_code": 128 if "exit code(128)" in error_msg else None
+                "details": error_msg
             }
         
         except Exception as e:
