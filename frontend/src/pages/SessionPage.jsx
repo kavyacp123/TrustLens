@@ -111,7 +111,7 @@ const SessionPage = () => {
                             transition={{ delay: 0.5 }}
                             className="space-y-6 pt-8 border-t border-white/5"
                         >
-                            <ConflictPanel conflict={true} />
+                            
                             <FinalDecisionPanel decision="MANUAL_REVIEW" />
                         </motion.div>
                     )}

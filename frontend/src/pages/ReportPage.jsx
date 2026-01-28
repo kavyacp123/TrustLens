@@ -23,14 +23,7 @@ const ReportPage = () => {
                     <h1 className="text-2xl font-bold text-white mb-2">Audit Report #{analysisId?.substring(0, 8).toUpperCase()}</h1>
                     <p className="text-slate-400 text-sm">Generated on {formattedDate} • UTC</p>
                 </div>
-                <div className="flex gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 text-sm transition-colors">
-                        <Share2 className="w-4 h-4" /> Share
-                    </button>
-                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm transition-colors shadow-lg shadow-blue-500/20">
-                        <Download className="w-4 h-4" /> Export PDF
-                    </button>
-                </div>
+                
             </div>
 
             <div className="bg-white/5 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-md">
