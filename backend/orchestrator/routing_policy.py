@@ -196,7 +196,12 @@ class RoutingPolicy:
         raw = features.get("features", {})
         complexity = raw.get("complexity_indicators", {})
         
-        return {
+        self.logger.info(f"🔍 Curating quality metrics:")
+        self.logger.info(f"   raw['total_loc']: {raw.get('total_loc', 'NOT FOUND')}")
+        self.logger.info(f"   complexity['function_count']: {complexity.get('function_count', 'NOT FOUND')}")
+        self.logger.info(f"   complexity['nested_depth']: {complexity.get('nested_depth', 'NOT FOUND')}")
+        
+        metrics = {
             "avg_function_length": raw.get("total_loc", 0) / max(1, complexity.get("function_count", 1)),
             "max_nesting_depth": complexity.get("nested_depth", 0),
             "total_loc": raw.get("total_loc", 0),
@@ -206,6 +211,13 @@ class RoutingPolicy:
             "long_files": raw.get("long_files", []),
             "high_nesting_locations": complexity.get("high_nesting_locations", [])
         }
+        
+        self.logger.info(f"✅ Final curated metrics:")
+        self.logger.info(f"   total_loc: {metrics['total_loc']}")
+        self.logger.info(f"   function_count: {metrics['function_count']}")
+        self.logger.info(f"   max_nesting_depth: {metrics['max_nesting_depth']}")
+        
+        return metrics
     
     def _extract_security_snippets(
         self, 

@@ -204,14 +204,20 @@ class GitS3Workflow:
             high_nesting_locations = []
             average_file_size = 0
             
+            self.logger.info(f"📊 Processing quality metrics from {len(quality_metrics)} files")
+            
             if quality_metrics:
                 # quality_metrics is {filename: {loc, functions, classes, ...}}
                 for filename, metrics in quality_metrics.items():
                     if isinstance(metrics, dict):
-                        total_loc += metrics.get("loc", 0)
-                        total_functions += metrics.get("function_count", 0)
-                        total_classes += metrics.get("class_count", 0)
+                        file_loc = metrics.get("loc", 0)
+                        file_functions = metrics.get("function_count", 0)
+                        file_classes = metrics.get("class_count", 0)
                         current_depth = metrics.get("max_nesting_depth", 0)
+                        
+                        total_loc += file_loc
+                        total_functions += file_functions
+                        total_classes += file_classes
                         max_nesting_depth = max(max_nesting_depth, current_depth)
                         
                         if current_depth > 4:
@@ -222,6 +228,8 @@ class GitS3Workflow:
                 
                 if quality_metrics:
                     average_file_size = total_loc / len(quality_metrics) if len(quality_metrics) > 0 else 0
+            
+            self.logger.info(f"   📈 Total LoC: {total_loc}, Functions: {total_functions}, Classes: {total_classes}, Max Depth: {max_nesting_depth}")
             
             # Prepare metadata with both git info and quality metrics
             metadata_obj = {

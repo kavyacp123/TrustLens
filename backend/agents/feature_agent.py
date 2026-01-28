@@ -31,10 +31,21 @@ class FeatureExtractionAgent(BaseAgent):
     def analyze(self, code_files: Dict[str, str], features: Dict[str, Any] = None) -> AgentOutput:
         """
         Extract static features from code.
+        
+        Args:
+            code_files: Code files to analyze (empty in snippet-only mode)
+            features: Pre-calculated features from metadata (used in snippet-only mode)
+        
+        Returns:
+            AgentOutput with features
         """
         try:
-            # Extract features (deterministic only)
-            extracted_features = self._extract_features(code_files)
+            # If features are provided (snippet-only mode), use those instead of extracting
+            if features and features.get("features"):
+                extracted_features = features.get("features", {})
+            else:
+                # Extract features from code files (full mode)
+                extracted_features = self._extract_features(code_files)
             
             # Generate summary findings for the deep dive
             summary_findings = []

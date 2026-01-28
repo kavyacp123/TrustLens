@@ -38,7 +38,7 @@ class GeminiClient:
         try:
             import google.generativeai as genai
             if self.api_key != "PLACEHOLDER_API_KEY":
-                genai.configure(api_key=self.api_key, api_version="v1")
+                genai.configure(api_key=self.api_key)
                 self.model = genai.GenerativeModel(model)
                 self.client_ready = True
             else:

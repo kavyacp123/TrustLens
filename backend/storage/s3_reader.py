@@ -274,6 +274,15 @@ class S3Reader:
             content = response['Body'].read().decode('utf-8')
             metadata = json.loads(content)
             self.logger.info(f"✅ Retrieved metadata for {s3_base_path}")
+            
+            # Debug: Log metadata structure
+            self.logger.info(f"📋 Metadata structure:")
+            self.logger.info(f"   Top-level keys: {list(metadata.keys())}")
+            if "repo_info" in metadata:
+                repo_info = metadata.get("repo_info", {})
+                self.logger.info(f"   repo_info keys: {list(repo_info.keys())}")
+                self.logger.info(f"   repo_info['total_loc']: {repo_info.get('total_loc', 'NOT FOUND')}")
+            
             return metadata
         except Exception as e:
             self.logger.warning(f"⚠️ Could not retrieve metadata: {e}")

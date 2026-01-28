@@ -70,6 +70,14 @@ class Orchestrator:
         self.logger.info("📦 Fetching analysis context from S3...")
         metadata = self.s3_reader.get_metadata(s3_path)
         
+        # Debug: Log metadata structure
+        self.logger.info(f"📋 Metadata Keys: {list(metadata.keys()) if metadata else 'NONE'}")
+        if metadata and "repo_info" in metadata:
+            repo_info = metadata.get("repo_info", {})
+            self.logger.info(f"   repo_info Keys: {list(repo_info.keys())}")
+            self.logger.info(f"   total_loc from metadata: {repo_info.get('total_loc', 'NOT FOUND')}")
+            self.logger.info(f"   function_count from metadata: {repo_info.get('function_count', 'NOT FOUND')}")
+        
         # Step 2: Feature Extraction (Hybrid mode)
         # If we have raw code files, scane them. If not, use pre-calculated metadata.
         code_files = self.s3_reader.read_code_snapshot(s3_path)
@@ -78,6 +86,13 @@ class Orchestrator:
             self.logger.info("ℹ️ Snippet-only mode detected. Using pre-calculated features from metadata.")
             # Map S3 metadata to the 'features' format the agents expect
             repo_info = metadata.get("repo_info", {})
+            
+            self.logger.info(f"🔍 Building features from repo_info:")
+            self.logger.info(f"   total_loc: {repo_info.get('total_loc', 0)}")
+            self.logger.info(f"   function_count: {repo_info.get('function_count', 0)}")
+            self.logger.info(f"   class_count: {repo_info.get('class_count', 0)}")
+            self.logger.info(f"   nested_depth: {repo_info.get('nested_depth', 0)}")
+            
             features = {
                 "features": {
                     "total_loc": repo_info.get("total_loc", 0),
@@ -91,6 +106,11 @@ class Orchestrator:
                     }
                 }
             }
+            
+            self.logger.info(f"✅ Features structure created:")
+            self.logger.info(f"   features['features']['total_loc']: {features['features']['total_loc']}")
+            self.logger.info(f"   features['features']['complexity_indicators']['function_count']: {features['features']['complexity_indicators']['function_count']}")
+            
             feature_output = self.feature_agent.analyze({}, features=features)
         else:
             self.logger.info("🔍 Performing full codebase feature extraction...")

@@ -163,7 +163,7 @@ class CodeQualityAgent(BaseAgent):
                 "severity": "warning",
                 "description": f"Deep nesting detected (depth {loc['depth']})",
                 "filename": loc['file'],
-                "line_number": loc['line']
+                "line_number": loc.get('line', 1)  # Default to 1 if line not provided
             })
 
         # Summary findings
