@@ -77,12 +77,20 @@ class Orchestrator:
         if metadata and not any(f.endswith(('.py', '.js', '.ts', '.java')) for f in code_files.keys()):
             self.logger.info("ℹ️ Snippet-only mode detected. Using pre-calculated features from metadata.")
             # Map S3 metadata to the 'features' format the agents expect
+            repo_info = metadata.get("repo_info", {})
             features = {
-                "features": metadata.get("repo_info", {}),
-                "total_loc": metadata.get("repo_info", {}).get("file_count", 0) # Use file_count as proxy if total_loc missing
+                "features": {
+                    "total_loc": repo_info.get("total_loc", 0),
+                    "average_file_size": repo_info.get("average_file_size", 0),
+                    "file_count": repo_info.get("file_count", 0),
+                    "complexity_indicators": {
+                        "function_count": repo_info.get("function_count", 0),
+                        "class_count": repo_info.get("class_count", 0),
+                        "nested_depth": repo_info.get("nested_depth", 0),
+                        "high_nesting_locations": repo_info.get("high_nesting_locations", [])
+                    }
+                }
             }
-            # Add specific feature structure for agents
-            features["features"]["total_loc"] = metadata.get("repo_info", {}).get("commit_count", 0) # Mocking for demo
             feature_output = self.feature_agent.analyze({}, features=features)
         else:
             self.logger.info("🔍 Performing full codebase feature extraction...")

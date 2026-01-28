@@ -23,7 +23,7 @@ class GeminiClient:
         
         try:
             import google.generativeai as genai
-            genai.configure(api_key=self.api_key)
+            genai.configure(api_key=self.api_key, api_version="v1")
             self.model = genai.GenerativeModel(model)
             self.client_ready = True
         except Exception:
