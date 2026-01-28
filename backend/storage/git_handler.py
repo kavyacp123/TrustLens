@@ -1,259 +1,261 @@
 """
-Git Repository Handler
-Manages Git operations: clone, pull, branch handling
+Git to S3 Workflow
+Complete orchestration of cloning Git repos and uploading extracted snippets to S3
 """
 
 import os
-import shutil
-import tempfile
 from typing import Dict, Any, Optional
 from datetime import datetime
-from pathlib import Path
+
+from storage.git_handler import GitHandler
+from storage.s3_uploader import S3Uploader
+from storage.snippet_extractor import SnippetExtractor
 from utils.logger import Logger
 
-try:
-    import git
-    from git import Repo
-    GIT_AVAILABLE = True
-except ImportError:
-    GIT_AVAILABLE = False
 
-
-class GitHandler:
+class GitS3Workflow:
     """
-    Handles Git operations for repository cloning and management.
-    Supports GitHub, GitLab, Bitbucket, and self-hosted Git servers.
+    Complete workflow:
+    1. Validate repo
+    2. Clone Git repo
+    3. Extract snippets
+    4. Upload snippets + metadata to S3
+    5. Cleanup local files
     """
 
-    def __init__(self, base_temp_dir: Optional[str] = None):
-        self.logger = Logger("GitHandler")
+    def __init__(self):
+        self.logger = Logger("GitS3Workflow")
+        self.git_handler = GitHandler()
+        self.s3_uploader = S3Uploader()
+        self.snippet_extractor = SnippetExtractor()
+        self.workflow_history: Dict[str, Any] = {}
 
-        # Writable directory (Render-safe)
-        self.base_temp_dir = base_temp_dir or "/tmp/trustlens_repos"
+    # -------------------------
+    # Public API
+    # -------------------------
 
-        try:
-            os.makedirs(self.base_temp_dir, exist_ok=True)
-            self.logger.info(f"📂 Git workspace ready at: {self.base_temp_dir}")
-        except Exception as e:
-            self.logger.warning(
-                f"⚠️ Could not create custom temp dir: {e}. Falling back to system temp."
-            )
-            self.base_temp_dir = tempfile.gettempdir()
-
-        self.cloned_repos: Dict[str, Dict[str, Any]] = {}
-
-        if not GIT_AVAILABLE:
-            self.logger.warning("⚠️ GitPython not installed")
-
-        self._check_git_installed()
-
-    # ------------------------------------------------------------------
-    # Environment checks
-    # ------------------------------------------------------------------
-    def _check_git_installed(self) -> bool:
-        try:
-            import subprocess
-
-            result = subprocess.run(
-                ["git", "--version"], capture_output=True, timeout=5
-            )
-            if result.returncode == 0:
-                self.logger.info(
-                    f"✅ Git available: {result.stdout.decode().strip()}"
-                )
-                return True
-            self.logger.error("❌ Git command failed")
-            return False
-        except FileNotFoundError:
-            self.logger.error("❌ Git is NOT installed or not in PATH")
-            return False
-        except Exception as e:
-            self.logger.warning(f"⚠️ Git check failed: {e}")
-            return False
-
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-    def validate_repo_url(self, repo_url: str) -> bool:
-        valid_prefixes = (
-            "https://",
-            "ssh://",
-            "git@github.com:",
-            "git@gitlab.com:",
-            "git@bitbucket.org:",
-        )
-
-        valid = repo_url.startswith(valid_prefixes)
-        if valid:
-            self.logger.info(f"✅ Valid Git URL: {repo_url}")
-        else:
-            self.logger.error(f"❌ Invalid Git URL: {repo_url}")
-        return valid
-
-    def extract_repo_name(self, repo_url: str) -> str:
-        name = repo_url.rstrip("/").split("/")[-1]
-        return name.replace(".git", "")
-
-    # ------------------------------------------------------------------
-    # Clone logic
-    # ------------------------------------------------------------------
-    def clone_repository(
+    def process_git_repository(
         self,
         repo_url: str,
+        analysis_id: str,
         branch: str = "main",
-        depth: Optional[int] = None,
-        timeout: int = 300,
+        shallow: bool = False,
+        extract_snippets: bool = True,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
 
-        if not GIT_AVAILABLE:
-            return {"success": False, "error": "GitPython not installed", "repo_url": repo_url}
-
-        if not self.validate_repo_url(repo_url):
-            return {"success": False, "error": "Invalid repository URL", "repo_url": repo_url}
-
-        repo_name = self.extract_repo_name(repo_url)
-        safe_name = "".join(c for c in repo_name if c.isalnum() or c in ("-", "_"))
-        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-        clone_dir = os.path.join(self.base_temp_dir, f"repo-{safe_name}-{timestamp}")
-
-        raw_token = os.environ.get("GITHUB_TOKEN")
-        token = raw_token.strip() if raw_token else None
-
-        # ✅ GitHub auth format
-        if token and "github.com" in repo_url:
-            auth_url = repo_url.replace("https://", f"https://x-access-token:{token}@")
-        else:
-            auth_url = repo_url
-
-        # Retry logic for network flakiness
-        max_retries = 3
-        last_error = None
-
-        for attempt in range(max_retries):
-            try:
-                self.logger.info(f"🔄 Clone attempt {attempt + 1}/{max_retries} for {repo_name}...")
-                
-                clone_kwargs = {
-                    "to_path": clone_dir,
-                    "branch": branch,
-                    "progress": GitProgress(self.logger),
-                    "env": {"GIT_TERMINAL_PROMPT": "0"} 
-                }
-
-                if depth:
-                    clone_kwargs["depth"] = depth
-
-                repo = Repo.clone_from(auth_url, **clone_kwargs)
-                
-                if os.path.exists(clone_dir):
-                    repo_info = self._get_repo_info(repo, clone_dir)
-                    self.cloned_repos[repo_name] = {
-                        "local_path": clone_dir,
-                        "repo_url": repo_url,
-                        "branch": branch,
-                        "cloned_at": timestamp,
-                    }
-                    self.logger.info(f"✅ Successfully cloned: {repo_name}")
-                    return {
-                        "success": True,
-                        "repo_name": repo_name,
-                        "local_path": clone_dir,
-                        "repo_url": repo_url,
-                        "branch": branch,
-                        "repo_info": repo_info,
-                    }
-
-            except git.exc.GitCommandError as e:
-                import time
-                stderr = getattr(e, "stderr", "") or str(e)
-                last_error = self._diagnose_git_error(stderr.replace(token, "***") if token else stderr)
-                self.logger.warning(f"⚠️ Attempt {attempt + 1} failed: {last_error}")
-                self._cleanup_dir(clone_dir)
-                if attempt < max_retries - 1:
-                    time.sleep(2) # Wait before retry
-            except Exception as e:
-                self.logger.error(f"❌ Critical clone error: {e}")
-                break
-
-        return {
-            "success": False,
-            "error": last_error or "Clone failed after multiple attempts",
-            "repo_url": repo_url
+        workflow_result = {
+            "analysis_id": analysis_id,
+            "repo_url": repo_url,
+            "branch": branch,
+            "status": "INITIALIZED",
+            "stages": {},
+            "started_at": datetime.utcnow().isoformat(),
         }
 
-    # ------------------------------------------------------------------
-    # Diagnostics
-    # ------------------------------------------------------------------
-    def _diagnose_git_error(self, error: str) -> str:
-        err = error.lower()
-        if "authentication" in err or "403" in err or "401" in err:
-            return "Authentication failed – check GITHUB_TOKEN and scopes"
-        if "not found" in err or "404" in err:
-            return "Repository or branch not found"
-        if "exit code(128)" in err:
-            return "Git error 128 – usually auth, branch, or network issue"
-        return f"Git operation failed: {error[:100]}..."
+        local_repo_path = None
 
-    # ------------------------------------------------------------------
-    # Repo info
-    # ------------------------------------------------------------------
-    def _get_repo_info(self, repo: Repo, repo_path: str) -> Dict[str, Any]:
         try:
-            commit_count = sum(1 for _ in repo.iter_commits(repo.active_branch))
-            file_count = sum(len(files) for _, _, files in os.walk(repo_path))
-            commit = repo.head.commit
+            self.logger.info(f"🚀 Starting Git-S3 workflow: {analysis_id}")
+
+            # ---- Preflight ----
+            repo_url = self._inject_auth(repo_url)
+            self._preflight_checks(repo_url, branch)
+
+            # ---- Stage 1: Clone ----
+            clone_result = self._stage_clone(repo_url, branch, shallow)
+            workflow_result["stages"]["clone"] = clone_result
+
+            if not clone_result["success"]:
+                return self._fail(workflow_result, clone_result["error"])
+
+            local_repo_path = clone_result["local_path"]
+            repo_info = clone_result.get("repo_info", {})
+
+            # ---- Stage 2: Extract ----
+            snippets = {}
+            if extract_snippets:
+                extraction_result = self._stage_extract_snippets(local_repo_path)
+                workflow_result["stages"]["extraction"] = extraction_result
+
+                if not extraction_result["success"]:
+                    return self._fail(workflow_result, "Snippet extraction failed")
+
+                snippets = extraction_result["snippets"]
+
+            # ---- Stage 3: Upload ----
+            upload_result = self._stage_upload_to_s3(
+                analysis_id=analysis_id,
+                repo_url=repo_url,
+                branch=branch,
+                repo_info=repo_info,
+                snippets=snippets,
+                metadata=metadata,
+            )
+            workflow_result["stages"]["upload"] = upload_result
+
+            if not upload_result["success"]:
+                return self._fail(workflow_result, upload_result["error"])
+
+            # ---- Stage 4: Cleanup ----
+            cleanup_result = self._stage_cleanup(local_repo_path)
+            workflow_result["stages"]["cleanup"] = cleanup_result
+
+            workflow_result["status"] = "COMPLETED"
+            workflow_result["s3_path"] = upload_result["s3_path"]
+            workflow_result["completed_at"] = datetime.utcnow().isoformat()
+
+            self.workflow_history[analysis_id] = workflow_result
+            self.logger.info(f"✅ Workflow completed: {analysis_id}")
+
+            return workflow_result
+
+        except Exception as e:
+            self.logger.error(f"❌ Workflow crashed: {e}")
+            if local_repo_path:
+                self._safe_cleanup(local_repo_path)
+
+            workflow_result["status"] = "FAILED"
+            workflow_result["error"] = str(e)
+            workflow_result["completed_at"] = datetime.utcnow().isoformat()
+            return workflow_result
+
+    # -------------------------
+    # Internal helpers
+    # -------------------------
+
+    def _inject_auth(self, repo_url: str) -> str:
+        """
+        Inject GitHub token for private repos
+        """
+        token = os.getenv("GITHUB_TOKEN")
+        if token and repo_url.startswith("https://"):
+            return repo_url.replace("https://", f"https://{token}@")
+        return repo_url
+
+    def _preflight_checks(self, repo_url: str, branch: str):
+        """
+        Fail fast before cloning
+        """
+        self.logger.info("🔍 Running preflight checks")
+
+        if not self.git_handler.git_available():
+            raise RuntimeError("git binary not available on system")
+
+        if not self.git_handler.repo_exists(repo_url):
+            raise RuntimeError("Repository not reachable or auth failed")
+
+        if not self.git_handler.branch_exists(repo_url, branch):
+            raise RuntimeError(f"Branch '{branch}' does not exist")
+
+    # -------------------------
+    # Workflow stages
+    # -------------------------
+
+    def _stage_clone(self, repo_url: str, branch: str, shallow: bool) -> Dict[str, Any]:
+        self.logger.info("📥 Stage 1: Cloning repository")
+
+        depth = 1 if shallow else None
+
+        result = self.git_handler.clone_repository(
+            repo_url=repo_url,
+            branch=branch,
+            depth=depth,
+        )
+
+        if result["success"]:
+            self.logger.info(f"✅ Clone successful: {result['local_path']}")
+        else:
+            self.logger.error(f"❌ Clone failed: {result['error']}")
+
+        return result
+
+    def _stage_extract_snippets(self, local_repo_path: str) -> Dict[str, Any]:
+        self.logger.info("📝 Stage 2: Extracting snippets")
+
+        try:
+            snippets = self.snippet_extractor.extract_from_directory(local_repo_path)
+
+            if not snippets:
+                raise ValueError("No snippets extracted")
 
             return {
-                "commit_count": commit_count,
-                "file_count": file_count,
-                "latest_commit": commit.hexsha[:7],
-                "latest_author": commit.author.name,
-                "latest_message": commit.message.split("\n")[0],
-                "active_branch": repo.active_branch.name,
+                "success": True,
+                "snippet_count": sum(len(v) for v in snippets.values()),
+                "snippets": snippets,
             }
+
         except Exception as e:
-            self.logger.warning(f"⚠️ Repo info incomplete: {e}")
-            return {"file_count": 0}
+            self.logger.error(f"❌ Extraction failed: {e}")
+            return {"success": False, "error": str(e)}
 
-    # ------------------------------------------------------------------
-    # Cleanup
-    # ------------------------------------------------------------------
-    def cleanup_repository(self, repo_name: str, force: bool = False) -> bool:
-        repo = self.cloned_repos.get(repo_name)
-        if not repo:
-            return False
+    def _stage_upload_to_s3(
+        self,
+        analysis_id: str,
+        repo_url: str,
+        branch: str,
+        repo_info: Dict[str, Any],
+        snippets: Dict[str, Any],
+        metadata: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
 
-        success = self._cleanup_dir(repo["local_path"])
-        if success:
-            del self.cloned_repos[repo_name]
-        return success
+        self.logger.info("☁️ Stage 3: Uploading snippets to S3")
 
-    def cleanup_all(self) -> bool:
-        ok = True
-        for name in list(self.cloned_repos.keys()):
-            if not self.cleanup_repository(name):
-                ok = False
-        return ok
-
-    def _cleanup_dir(self, directory: str) -> bool:
         try:
-            if directory and os.path.exists(directory):
-                shutil.rmtree(directory, ignore_errors=True)
-                self.logger.info(f"🧹 Deleted: {directory}")
-            return True
+            project_name = repo_url.rstrip("/").split("/")[-1].replace(".git", "")
+
+            metadata_obj = {
+                "analysis_id": analysis_id,
+                "project_name": project_name,
+                "repo_url": repo_url,
+                "branch": branch,
+                "repo_info": repo_info,
+                "snippet_count": sum(len(v) for v in snippets.values()),
+                "custom_metadata": metadata or {},
+            }
+
+            s3_path = self.s3_uploader.upload_only_snippets(
+                project_name=project_name,
+                analysis_id=analysis_id,
+                snippets=snippets,
+                metadata=metadata_obj,
+            )
+
+            return {
+                "success": True,
+                "s3_path": s3_path,
+            }
+
         except Exception as e:
-            self.logger.error(f"Cleanup failed: {e}")
-            return False
+            self.logger.error(f"❌ Upload failed: {e}")
+            return {"success": False, "error": str(e)}
+
+    def _stage_cleanup(self, local_repo_path: str) -> Dict[str, Any]:
+        self.logger.info("🧹 Stage 4: Cleanup")
+
+        try:
+            self.git_handler.cleanup_by_path(local_repo_path)
+            return {"success": True}
+        except Exception as e:
+            self.logger.warning(f"⚠️ Cleanup failed: {e}")
+            return {"success": False, "error": str(e)}
+
+    # -------------------------
+    # Safety helpers
+    # -------------------------
+
+    def _safe_cleanup(self, path: str):
+        try:
+            self.git_handler.cleanup_by_path(path)
+        except Exception:
+            pass
+
+    def _fail(self, workflow_result: Dict[str, Any], error: str):
+        workflow_result["status"] = "FAILED"
+        workflow_result["error"] = error
+        workflow_result["completed_at"] = datetime.utcnow().isoformat()
+        return workflow_result
 
 
-# ----------------------------------------------------------------------
-# Progress logger
-# ----------------------------------------------------------------------
-class GitProgress(git.RemoteProgress):
-    def __init__(self, logger: Logger):
-        super().__init__()
-        self.logger = logger
-
-    def update(self, op_code, cur_count, max_count=None, message=""):
-        if message:
-            self.logger.info(f"Git: {message}")
+# Singleton
+git_s3_workflow = GitS3Workflow()
