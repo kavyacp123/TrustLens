@@ -6,8 +6,8 @@ const OverallOutcomePanel = ({ overall }) => {
     if (!overall) return null;
 
     // Visual configuration based on risk
-    const isHighRisk = overall.risk.toLowerCase() === 'high';
-    const isSafe = overall.risk.toLowerCase() === 'low';
+    const isHighRisk = overall.risk.toLowerCase() === 'high' || overall.risk.toLowerCase() === 'critical';
+    const isSafe = overall.risk.toLowerCase() === 'low' || overall.risk.toLowerCase() === 'none';
 
     const config = {
         color: isHighRisk ? 'text-security' : isSafe ? 'text-logic' : 'text-quality',
@@ -38,7 +38,7 @@ const OverallOutcomePanel = ({ overall }) => {
 
                 <div className="flex flex-col items-center justify-center gap-2">
                     <div className="flex items-end gap-2 text-primary">
-                        <span className="text-sm font-medium uppercase text-muted tracking-wider mb-1">Overall Confidence</span>
+                        <span className="text-sm font-medium uppercase text-muted tracking-wider mb-1">Analysis Confidence</span>
                         <span className="text-2xl font-mono relative top-[2px]">{(overall.confidence * 100).toFixed(0)}%</span>
                     </div>
 

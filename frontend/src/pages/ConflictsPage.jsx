@@ -11,8 +11,8 @@ const ConflictsPage = () => {
     const hasResults = results && results.length > 0;
 
     // Extract conflict details from real data
-    const highRiskAgents = hasResults ? results.filter(r => r.risk === 'high') : [];
-    const safeAgents = hasResults ? results.filter(r => r.risk === 'low') : [];
+    const highRiskAgents = hasResults ? results.filter(r => r.risk === 'high' || r.risk === 'critical') : [];
+    const safeAgents = hasResults ? results.filter(r => r.risk === 'low' || r.risk === 'none') : [];
     const hasRealDisagreement = highRiskAgents.length > 0 && safeAgents.length > 0;
 
     return (
@@ -78,14 +78,14 @@ const ConflictsPage = () => {
                             >
                                 <div className="flex items-center gap-2 mb-3">
                                     <Shield className="w-4 h-4 text-red-400" />
-                                    <h4 className="text-sm font-bold text-red-400 uppercase tracking-wider">High Risk Assessment</h4>
+                                    <h4 className="text-sm font-bold text-red-400 uppercase tracking-wider">High / Critical Risk Assessment</h4>
                                 </div>
                                 {highRiskAgents.map(agent => (
                                     <div key={agent.name} className="mb-3 last:mb-0">
                                         <p className="text-sm font-medium text-white">{agent.name}</p>
                                         <p className="text-xs text-slate-400 mt-1">{agent.summary}</p>
                                         <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                                            <span>Confidence: {agent.confidence}%</span>
+                                            <span>Analysis Confidence: {agent.confidence}%</span>
                                             <span>Findings: {agent.findingsCount}</span>
                                         </div>
                                     </div>
@@ -109,7 +109,7 @@ const ConflictsPage = () => {
                                         <p className="text-sm font-medium text-white">{agent.name}</p>
                                         <p className="text-xs text-slate-400 mt-1">{agent.summary}</p>
                                         <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                                            <span>Confidence: {agent.confidence}%</span>
+                                            <span>Analysis Confidence: {agent.confidence}%</span>
                                             <span>Findings: {agent.findingsCount}</span>
                                         </div>
                                     </div>

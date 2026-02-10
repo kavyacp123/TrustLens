@@ -28,9 +28,25 @@ const SessionPage = () => {
     const getDecisionKey = () => {
         if (!report?.final_decision) return null;
         const d = report.final_decision.toLowerCase();
-        if (d.includes('manual_review') || d.includes('review_required')) return 'MANUAL_REVIEW';
-        if (d.includes('acceptable') || d === 'proceed_with_caution') return 'SAFE';
-        if (d.includes('reject') || report.overall_risk_level === 'high') return 'RISK';
+
+        const risk = report.overall_risk_level?.toLowerCase();
+
+        // Priority 1: High/Critical Risk overrides everything
+        if (d.includes('manual_review_required') || d.includes('review_required') || risk === 'high' || risk === 'critical') {
+            return 'RISK';
+        }
+
+        // Priority 2: Conflict or Low Confidence -> Manual Review (Uncertainty)
+        if (report.disagreement_detected || (report.overall_confidence && report.overall_confidence < 0.7)) {
+            return 'MANUAL_REVIEW';
+        }
+
+        // Priority 3: Caution
+        if (d === 'proceed_with_caution' || risk === 'medium') {
+            return 'CAUTION';
+        }
+
+        // Priority 4: Safe
         return 'SAFE';
     };
 
@@ -92,13 +108,13 @@ const SessionPage = () => {
                                             className="p-3 rounded-lg border border-border bg-surface/30"
                                         >
                                             <div className="text-[10px] uppercase text-muted font-bold tracking-wider mb-1 truncate">{agent.name}</div>
-                                            <div className={`text-sm font-bold ${agent.risk === 'high' ? 'text-security' :
+                                            <div className={`text-sm font-bold ${(agent.risk === 'high' || agent.risk === 'critical') ? 'text-security' :
                                                 agent.risk === 'medium' ? 'text-quality' : 'text-logic'
                                                 }`}>
-                                                {agent.risk === 'high' ? 'CRITICAL' : agent.risk === 'medium' ? 'WARNING' : 'SAFE'}
+                                                {(agent.risk === 'high' || agent.risk === 'critical') ? 'CRITICAL' : agent.risk === 'medium' ? 'WARNING' : 'SAFE'}
                                             </div>
                                             <div className="text-xs text-muted mt-1">
-                                                {agent.confidence}% Conf. • {agent.findingsCount} hints
+                                                {agent.confidence}% Confidence • {agent.findingsCount} hints
                                             </div>
                                         </motion.div>
                                     ))}
