@@ -29,7 +29,7 @@ export const AnalysisProvider = ({ children }) => {
 
         // Initial log
         setLogs(prev => [...prev, {
-            id: Date.now(),
+            id: Date.now() + Math.random(),
             timestamp: new Date().toLocaleTimeString(),
             message: `Starting analysis workflow...`,
             type: 'info'
@@ -45,7 +45,7 @@ export const AnalysisProvider = ({ children }) => {
                     if (stepConfig) {
                         // Log completion of current step
                         setLogs(prev => [...prev, {
-                            id: Date.now(),
+                            id: Date.now() + Math.random(),
                             timestamp: new Date().toLocaleTimeString(),
                             message: `✓ Completed: ${stepConfig.label}`,
                             type: 'success'
@@ -58,7 +58,7 @@ export const AnalysisProvider = ({ children }) => {
                     if (nextStepConfig) {
                         // Log start of next step
                         setLogs(prev => [...prev, {
-                            id: Date.now() + 1,
+                            id: Date.now() + Math.random(),
                             timestamp: new Date().toLocaleTimeString(),
                             message: `Processing: ${nextStepConfig.label}...`,
                             type: 'info'
@@ -85,7 +85,8 @@ export const AnalysisProvider = ({ children }) => {
         }, MOCK_ANALYSIS_TIME_MS);
     };
 
-    const startAnalysis = async (input, type = 'deep', suggestions = false) => {
+    const startAnalysis = async (rawInput, type = 'deep', suggestions = false) => {
+        const input = rawInput.trim();
         let currentAnalysisId;
         try {
             setError(null);
@@ -105,7 +106,7 @@ export const AnalysisProvider = ({ children }) => {
             const debugInfo = `API Call to: ${APP_CONFIG.API_BASE_URL}`;
             console.log("DEBUG:", debugInfo);
             setLogs(prev => [...prev, {
-                id: Date.now() - 1,
+                id: Date.now() + Math.random(),
                 timestamp: new Date().toLocaleTimeString(),
                 message: `📡 Connecting to Backend: ${APP_CONFIG.API_BASE_URL}`,
                 type: 'info'
@@ -115,7 +116,7 @@ export const AnalysisProvider = ({ children }) => {
             if (input.startsWith('http')) {
                 console.log("DEBUG: Cloning GitHub Repo:", input);
                 setLogs(prev => [...prev, {
-                    id: Date.now() + 1,
+                    id: Date.now() + Math.random(),
                     timestamp: new Date().toLocaleTimeString(),
                     message: `🔄 Cloning GitHub repository...`,
                     type: 'info'
@@ -159,7 +160,7 @@ export const AnalysisProvider = ({ children }) => {
             setError(err.message);
             setStatus('FAILED');
             setLogs(prev => [...prev, {
-                id: Date.now(),
+                id: Date.now() + Math.random(),
                 timestamp: new Date().toLocaleTimeString(),
                 message: `❌ Error: ${err.message}`,
                 type: 'error'
@@ -203,7 +204,7 @@ export const AnalysisProvider = ({ children }) => {
 
             // Final success log
             setLogs(prev => [...prev, {
-                id: Date.now(),
+                id: Date.now() + Math.random(),
                 timestamp: new Date().toLocaleTimeString(),
                 message: `Analysis successfully completed.`,
                 type: 'success'

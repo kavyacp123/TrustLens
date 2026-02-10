@@ -110,16 +110,10 @@ class GitHandler:
     ) -> Dict[str, Any]:
         """
         Clone a Git repository.
-        
-        Args:
-            repo_url: Repository URL (HTTPS or SSH)
-            branch: Branch to clone (default: main)
-            depth: Shallow clone depth (for large repos)
-            timeout: Operation timeout in seconds
-        
-        Returns:
-            Dictionary with clone results
         """
+        # Trim URL to remove trailing newlines/spaces
+        repo_url = repo_url.strip()
+        
         if not GIT_AVAILABLE:
             return {
                 "success": False,
