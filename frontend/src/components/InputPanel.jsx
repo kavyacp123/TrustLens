@@ -101,7 +101,7 @@ const InputPanel = ({ onStartAnalysis, isAnalyzing }) => {
                                                 ))}
                                             </div>
                                             <h3 className="text-primary font-medium mb-1">Capturing code snapshot...</h3>
-                                            <p className="text-xs text-muted font-mono">Indexing 24 files • 1,420 lines</p>
+                                            <h3 className="text-primary font-medium mb-1">Capturing code snapshot...</h3>
                                         </>
                                     )}
 

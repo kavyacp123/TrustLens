@@ -321,7 +321,7 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
                         </button>
 
                         {/* Content */}
-                        <div className="relative p-12 overflow-y-auto max-h-[90vh]">
+                        <div className="relative p-12 overflow-x-hidden overflow-y-auto no-scrollbar max-h-[90vh]">
                             {/* Header */}
                             <div className="text-center mb-12">
                                 <motion.div
@@ -411,8 +411,8 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
                                         key={idx}
                                         onClick={() => setCurrentStep(idx)}
                                         className={`h-2 rounded-full transition-all ${idx === currentStep
-                                                ? 'w-8 bg-accent-cyan'
-                                                : 'w-2 bg-white/20 hover:bg-white/40'
+                                            ? 'w-8 bg-accent-cyan'
+                                            : 'w-2 bg-white/20 hover:bg-white/40'
                                             }`}
                                     />
                                 ))}

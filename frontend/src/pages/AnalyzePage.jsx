@@ -21,18 +21,7 @@ const ANALYSIS_MODES = [
         bgColor: 'bg-blue-500/5',
         activeColor: 'border-blue-500/50 bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.15)]',
     },
-    {
-        id: 'quick',
-        title: 'Quick Scan',
-        description: 'Fast feature extraction and quality check. Ideal for rapid feedback on small changesets.',
-        agents: [
-            { name: 'Feature', icon: Zap, color: 'text-blue-400' },
-            { name: 'Quality', icon: Search, color: 'text-yellow-400' },
-        ],
-        borderColor: 'border-emerald-500/20',
-        bgColor: 'bg-emerald-500/5',
-        activeColor: 'border-emerald-500/50 bg-emerald-500/10 shadow-[0_0_20px_rgba(34,197,94,0.15)]',
-    }
+
 ];
 
 const AnalyzePage = () => {
