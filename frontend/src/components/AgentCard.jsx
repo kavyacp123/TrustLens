@@ -134,7 +134,7 @@ const AgentCard = ({ agent, index }) => {
                                     <div key={i} className="space-y-2 p-3 rounded-lg bg-black/20 border border-white/5">
                                         <div className="flex justify-between items-center text-[10px] font-mono text-muted mb-1">
                                             <span className="text-secondary uppercase">{f.type || 'Detection'}</span>
-                                            <span>{f.filename}:{f.line_number}</span>
+                                            <span className="font-semibold text-text-secondary">Location: {f.filename}:{f.line_number}</span>
                                         </div>
                                         <p className="text-xs text-text-secondary leading-relaxed">
                                             {f.description}
