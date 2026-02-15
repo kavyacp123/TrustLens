@@ -306,6 +306,27 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
                         exit={{ scale: 0.9, y: 20 }}
                         transition={{ duration: 0.3, type: "spring" }}
                     >
+                        {/* Side Navigation Arrows */}
+                        <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between px-4 z-40 pointer-events-none">
+                            <button
+                                onClick={handlePrevious}
+                                disabled={currentStep === 0}
+                                className={`p-3 rounded-full bg-surface/50 backdrop-blur-md border border-white/10 text-white transition-all pointer-events-auto hover:bg-white/10 hover:scale-110 ${currentStep === 0 ? 'opacity-0 cursor-default' : 'opacity-100'
+                                    }`}
+                            >
+                                <ChevronLeft className="w-8 h-8" />
+                            </button>
+
+                            {currentStep < steps.length - 1 && (
+                                <button
+                                    onClick={handleNext}
+                                    className="p-3 rounded-full bg-surface/50 backdrop-blur-md border border-white/10 text-white transition-all pointer-events-auto hover:bg-white/10 hover:scale-110"
+                                >
+                                    <ChevronRight className="w-8 h-8" />
+                                </button>
+                            )}
+                        </div>
+
                         {/* Animated Background */}
                         <div className="absolute inset-0 overflow-hidden pointer-events-none">
                             <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-pulse" />
@@ -322,6 +343,8 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
 
                         {/* Content */}
                         <div className="relative p-12 overflow-x-hidden overflow-y-auto no-scrollbar max-h-[90vh]">
+
+
                             {/* Header */}
                             <div className="text-center mb-12">
                                 <motion.div
@@ -418,44 +441,30 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
                                 ))}
                             </div>
 
-                            {/* Navigation Buttons */}
-                            <div className="flex items-center justify-between gap-4">
-                                <button
-                                    onClick={handlePrevious}
-                                    disabled={currentStep === 0}
-                                    className="px-6 py-3 rounded-lg border border-border hover:bg-surface text-text-secondary hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
+                            {/* Final Step Actions */}
+                            {currentStep === steps.length - 1 && (
+                                <motion.div
+                                    className="flex justify-center gap-4 mt-8"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
                                 >
-                                    <ChevronLeft className="w-5 h-5" />
-                                    Previous
-                                </button>
-
-                                {currentStep === steps.length - 1 ? (
-                                    <div className="flex gap-4">
-                                        <button
-                                            onClick={onClose}
-                                            className="px-6 py-3 rounded-lg border border-border hover:bg-surface text-text-secondary hover:text-white transition-colors"
-                                        >
-                                            Close
-                                        </button>
-                                        <Link
-                                            to="/analyze"
-                                            className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-500 text-white font-semibold transition-colors flex items-center gap-2"
-                                            onClick={onClose}
-                                        >
-                                            Analyze My Code
-                                            <ChevronRight className="w-5 h-5" />
-                                        </Link>
-                                    </div>
-                                ) : (
                                     <button
-                                        onClick={handleNext}
-                                        className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-500 text-white font-semibold transition-colors flex items-center gap-2"
+                                        onClick={onClose}
+                                        className="px-6 py-3 rounded-lg border border-border hover:bg-surface text-text-secondary hover:text-white transition-colors"
                                     >
-                                        Next
-                                        <ChevronRight className="w-5 h-5" />
+                                        Close
                                     </button>
-                                )}
-                            </div>
+                                    <Link
+                                        to="/analyze"
+                                        className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-500 text-white font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                                        onClick={onClose}
+                                    >
+                                        Analyze My Code
+                                        <ChevronRight className="w-5 h-5" />
+                                    </Link>
+                                </motion.div>
+                            )}
                         </div>
                     </motion.div>
                 </motion.div>
